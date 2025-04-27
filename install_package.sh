@@ -30,11 +30,13 @@ usage() {
     echo ""
     echo "Options:"
     echo "  -p, --package URL    URL to the package ZIP file (required)"
+    echo "                       Supports direct URLs and Google Drive links"
     echo "  -d, --dir PATH       ComfyUI installation directory (default: /workspace/ComfyUI)"
     echo "  -h, --help           Show this help message"
     echo ""
-    echo "Example:"
+    echo "Examples:"
     echo "  $0 --package https://example.com/my-package.zip"
+    echo "  $0 --package https://drive.google.com/file/d/FILEID/view?usp=sharing"
 }
 
 # Parse command line arguments
@@ -108,6 +110,10 @@ check_dependencies() {
         apt-get install -y "${missing_deps[@]}"
     fi
     
+    # Install gdown for Google Drive support
+    echo -e "${BLUE}Installing gdown for Google Drive support...${NC}"
+    pip install gdown
+    
     echo -e "${GREEN}All dependencies satisfied.${NC}"
 }
 
@@ -145,15 +151,47 @@ create_directories() {
 # Download and extract package
 download_package() {
     echo -e "${BLUE}Downloading package from $PACKAGE_URL...${NC}"
-    
-    # Check if URL is valid
-    if ! curl --output /dev/null --silent --head --fail "$PACKAGE_URL"; then
-        echo -e "${RED}Invalid package URL: $PACKAGE_URL${NC}"
-        exit 1
-    fi
-    
     local package_file="$TEMP_DIR/package.zip"
-    wget -O "$package_file" "$PACKAGE_URL"
+    
+    # Check if it's a Google Drive URL
+    if [[ $PACKAGE_URL == *"drive.google.com"* ]]; then
+        echo -e "${BLUE}Detected Google Drive URL. Using gdown...${NC}"
+        
+        # Extract file ID from different types of Google Drive links
+        local file_id=""
+        if [[ $PACKAGE_URL == *"/file/d/"* ]]; then
+            # Format: https://drive.google.com/file/d/FILE_ID/view...
+            file_id=$(echo $PACKAGE_URL | sed -r 's|.*/file/d/([^/]+).*|\1|')
+        elif [[ $PACKAGE_URL == *"id="* ]]; then
+            # Format: https://drive.google.com/uc?id=FILE_ID or similar
+            file_id=$(echo $PACKAGE_URL | sed -r 's|.*[?&]id=([^&]+).*|\1|')
+        fi
+        
+        if [ -z "$file_id" ]; then
+            echo -e "${RED}Could not extract file ID from Google Drive URL.${NC}"
+            echo -e "${YELLOW}Please use a direct Google Drive link.${NC}"
+            exit 1
+        fi
+        
+        echo -e "${BLUE}Downloading file with ID: $file_id${NC}"
+        # Use gdown to download from Google Drive
+        gdown --id "$file_id" -O "$package_file"
+        
+        if [ ! -f "$package_file" ] || [ ! -s "$package_file" ]; then
+            echo -e "${RED}Failed to download file from Google Drive.${NC}"
+            echo -e "${YELLOW}Please check the URL and ensure the file is shared publicly.${NC}"
+            exit 1
+        fi
+    else
+        # Regular download for non-Google Drive URLs
+        # Check if URL is valid
+        if ! curl --output /dev/null --silent --head --fail "$PACKAGE_URL"; then
+            echo -e "${RED}Invalid package URL: $PACKAGE_URL${NC}"
+            exit 1
+        fi
+        
+        wget -O "$package_file" "$PACKAGE_URL"
+    fi
     
     echo -e "${BLUE}Extracting package...${NC}"
     unzip -q "$package_file" -d "$TEMP_DIR/extracted"
