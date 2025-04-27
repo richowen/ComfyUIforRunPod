@@ -174,8 +174,8 @@ download_package() {
         fi
         
         echo -e "${BLUE}Downloading file with ID: $file_id${NC}"
-        # Use gdown to download from Google Drive
-        gdown --id "$file_id" -O "$package_file"
+        # Use gdown to download from Google Drive - removed deprecated --id flag
+        gdown "$file_id" -O "$package_file"
         
         if [ ! -f "$package_file" ] || [ ! -s "$package_file" ]; then
             echo -e "${RED}Failed to download file from Google Drive.${NC}"
