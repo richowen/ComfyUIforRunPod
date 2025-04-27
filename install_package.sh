@@ -86,6 +86,10 @@ install_comfyui() {
         pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu121
         pip install -r requirements.txt
         
+        # Install additional performance enhancing dependencies
+        echo -e "${BLUE}Installing additional performance enhancing dependencies...${NC}"
+        pip install sageattention triton
+        
         echo -e "${GREEN}ComfyUI has been successfully installed at $COMFYUI_DIR${NC}"
     else
         echo -e "${GREEN}ComfyUI already installed at $COMFYUI_DIR${NC}"
@@ -413,8 +417,20 @@ main() {
     echo -e "${GREEN}  Installation Complete!            ${NC}"
     echo -e "${GREEN}====================================${NC}"
     echo -e "${GREEN}ComfyUI package has been installed to: $COMFYUI_DIR${NC}"
-    echo -e "${GREEN}To start ComfyUI, run:${NC}"
-    echo -e "${GREEN}  cd $COMFYUI_DIR && python main.py --listen 0.0.0.0 --port 3000${NC}"
+    
+    # Ask if the user wants to start ComfyUI
+    echo -e "${BLUE}Do you want to start ComfyUI now? (y/n)${NC}"
+    read -r start_comfyui
+    
+    if [[ "$start_comfyui" =~ ^[Yy]$ ]]; then
+        echo -e "${BLUE}Starting ComfyUI with enhanced performance settings...${NC}"
+        echo -e "${BLUE}ComfyUI will be available at: http://localhost:8188${NC}"
+        echo -e "${BLUE}Press Ctrl+C to stop ComfyUI${NC}"
+        cd "$COMFYUI_DIR" && python main.py --use-sage-attention --listen 0.0.0.0 --port 8188
+    else
+        echo -e "${GREEN}To start ComfyUI with enhanced performance, run:${NC}"
+        echo -e "${GREEN}  cd $COMFYUI_DIR && python main.py --use-sage-attention --listen 0.0.0.0 --port 8188${NC}"
+    fi
 }
 
 # Run the main function
