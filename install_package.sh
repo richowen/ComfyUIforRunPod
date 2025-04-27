@@ -426,7 +426,7 @@ main() {
         echo -e "${BLUE}Starting ComfyUI with enhanced performance settings...${NC}"
         echo -e "${BLUE}ComfyUI will be available at: http://localhost:8188${NC}"
         echo -e "${BLUE}Press Ctrl+C to stop ComfyUI${NC}"
-        cd "$COMFYUI_DIR" && python main.py --use-sage-attention --listen 0.0.0.0 --port 8188
+        cd "$COMFYUI_DIR" && python main.py --use-sage-attention --preview-method taesd --listen 0.0.0.0 --port 8188
     else
         echo -e "${GREEN}To start ComfyUI with enhanced performance, run:${NC}"
         echo -e "${GREEN}  cd $COMFYUI_DIR && python main.py --use-sage-attention --listen 0.0.0.0 --port 8188${NC}"
