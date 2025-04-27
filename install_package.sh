@@ -67,12 +67,28 @@ if [ -z "$PACKAGE_URL" ]; then
     exit 1
 fi
 
-# Check if ComfyUI directory exists
-if [ ! -d "$COMFYUI_DIR" ]; then
-    echo -e "${YELLOW}ComfyUI directory does not exist: $COMFYUI_DIR${NC}"
-    echo -e "${YELLOW}Please make sure ComfyUI is installed or specify the correct directory.${NC}"
-    exit 1
-fi
+# Install ComfyUI if not already installed
+install_comfyui() {
+    if [ ! -d "$COMFYUI_DIR" ]; then
+        echo -e "${BLUE}ComfyUI not found at $COMFYUI_DIR${NC}"
+        echo -e "${BLUE}Installing ComfyUI...${NC}"
+        
+        # Create parent directory if it doesn't exist
+        mkdir -p "$(dirname "$COMFYUI_DIR")"
+        
+        # Clone ComfyUI repository
+        git clone https://github.com/comfyanonymous/ComfyUI "$COMFYUI_DIR"
+        
+        # Install basic requirements
+        cd "$COMFYUI_DIR"
+        pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu121
+        pip install -r requirements.txt
+        
+        echo -e "${GREEN}ComfyUI has been successfully installed at $COMFYUI_DIR${NC}"
+    else
+        echo -e "${GREEN}ComfyUI already installed at $COMFYUI_DIR${NC}"
+    fi
+}
 
 # Check dependencies
 check_dependencies() {
@@ -80,7 +96,7 @@ check_dependencies() {
     local missing_deps=()
     
     # Check for basic CLI tools
-    for cmd in wget curl unzip jq python3 pip3; do
+    for cmd in wget curl unzip jq python3 pip3 git; do
         if ! command -v "$cmd" >/dev/null 2>&1; then
             missing_deps+=("$cmd")
         fi
@@ -329,6 +345,9 @@ main() {
     
     # Check dependencies
     check_dependencies
+    
+    # Install ComfyUI if needed
+    install_comfyui
     
     # Create necessary directories
     create_directories
